@@ -2,6 +2,7 @@
 
 namespace App\Controller;
  
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -500,6 +501,43 @@ class ApiController extends AbstractController
             'drivers' => $driversData
         ];
             
+        return $this->json($data);
+    }
+    #[Route('/policies', name: 'policy_list', methods:['get'] )]
+    public function list_policies(ManagerRegistry $doctrine, TokenStorageInterface $tokenStorage): JsonResponse
+    {
+        $user = $tokenStorage->getToken()->getUser();
+
+        $policies = $doctrine
+            ->getRepository(Policy::class)
+            ->findBy(['user' => $user->getId()], ['id' => 'ASC']);
+   
+        $data = [];
+   
+        foreach ($policies as $policy) {
+            $policyHolder = $policy->getPolicyHolder();
+            $policyHolderAddress = $policyHolder->getAddress();
+            $data[] = [
+                'id' => $policy->getId(),
+                'policyStatus' => $policy->getPolicyStatus(),
+                'policyType' => $policy->getPolicyType(),
+                'policyEffectiveDate' => $policy->getPolicyEffectiveDate(),
+                'policyExpirationDate' => $policy->getPolicyExpirationDate(),
+                'policyHolder' => [
+                    'id' => $policyHolder->getId(),
+                    'firstName' => $policyHolder->getFirstName(),
+                    'lastName' => $policyHolder->getLastName(),
+                    'address' => [
+                        'id' => $policyHolderAddress?->getId(),
+                        'street' => $policyHolderAddress?->getStreet(),
+                        'city' => $policyHolderAddress?->getCity(),
+                        'state' => $policyHolderAddress?->getState(),
+                        'zip' => $policyHolderAddress?->getZip(),
+                    ],
+                ],
+            ];
+        }
+   
         return $this->json($data);
     }
     // ############ End Policy ########### //

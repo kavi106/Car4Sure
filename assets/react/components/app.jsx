@@ -9,6 +9,8 @@ import AlertDialog from "./alert";
 import { callApi } from "../callApi";
 import Cookies from "js-cookie";
 import Header from "./header";
+import PolicyList from "./policies";
+import Spinner from "./spinner";
 
 const defaultAlert = { code: "", message: "" };
 
@@ -17,6 +19,7 @@ const App = () => {
   const [username, setUsername] = React.useState("");
   const [register, setRegister] = React.useState(false);
   const [error, setError] = React.useState(defaultAlert);
+  const [spinner, setSpinner] = React.useState(false);
 
   React.useEffect(() => {
     const jwtToken = Cookies.get("jwt");
@@ -26,6 +29,7 @@ const App = () => {
   }, []);
 
   const loginHandler = (username, password) => {
+    setSpinner(true);
     callApi(
       "POST",
       `/api/login_check`,
@@ -41,6 +45,7 @@ const App = () => {
       } else if (response.code) {
         setError(response);
       }
+      setSpinner(false);
     });
   };
 
@@ -70,8 +75,10 @@ const App = () => {
   const closeAlertHandler = () => {
     setError(defaultAlert);
   };
+
   return (
     <React.Fragment>
+      {spinner && <Spinner />}
       {error.code !== "" && error.message !== "" && (
         <AlertDialog onClose={closeAlertHandler}>{error.message}</AlertDialog>
       )}
@@ -82,16 +89,7 @@ const App = () => {
 
       <CssBaseline />
       <Header username={username} onLogout={logOutHandler} />
-      <Container component="main" maxWidth="sm" sx={{ mb: 4 }}>
-        <Paper
-          variant="outlined"
-          sx={{ my: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}
-        >
-          <Typography component="h2" variant="body" align="center">
-            You're Logged In
-          </Typography>
-        </Paper>
-      </Container>
+      {token && <PolicyList token={token} onLogout={logOutHandler} />}
     </React.Fragment>
   );
 };
