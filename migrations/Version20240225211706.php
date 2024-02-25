@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20240223073336 extends AbstractMigration
+final class Version20240225211706 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -28,18 +28,16 @@ final class Version20240223073336 extends AbstractMigration
         $this->addSql('CREATE TABLE policy (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, policy_holder_id INTEGER NOT NULL, user_id INTEGER NOT NULL, policy_status VARCHAR(10) NOT NULL, policy_type VARCHAR(10) NOT NULL, policy_effective_date DATE NOT NULL, policy_expiration_date DATE NOT NULL, CONSTRAINT FK_F07D0516A07EC9B5 FOREIGN KEY (policy_holder_id) REFERENCES person (id) NOT DEFERRABLE INITIALLY IMMEDIATE, CONSTRAINT FK_F07D0516A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) NOT DEFERRABLE INITIALLY IMMEDIATE)');
         $this->addSql('CREATE INDEX IDX_F07D0516A07EC9B5 ON policy (policy_holder_id)');
         $this->addSql('CREATE INDEX IDX_F07D0516A76ED395 ON policy (user_id)');
-        $this->addSql('CREATE TABLE policy_vehicle (policy_id INTEGER NOT NULL, vehicle_id INTEGER NOT NULL, PRIMARY KEY(policy_id, vehicle_id), CONSTRAINT FK_78AC5CB22D29E3C6 FOREIGN KEY (policy_id) REFERENCES policy (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE, CONSTRAINT FK_78AC5CB2545317D1 FOREIGN KEY (vehicle_id) REFERENCES vehicle (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE)');
-        $this->addSql('CREATE INDEX IDX_78AC5CB22D29E3C6 ON policy_vehicle (policy_id)');
-        $this->addSql('CREATE INDEX IDX_78AC5CB2545317D1 ON policy_vehicle (vehicle_id)');
         $this->addSql('CREATE TABLE policy_person (policy_id INTEGER NOT NULL, person_id INTEGER NOT NULL, PRIMARY KEY(policy_id, person_id), CONSTRAINT FK_1E083C6B2D29E3C6 FOREIGN KEY (policy_id) REFERENCES policy (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE, CONSTRAINT FK_1E083C6B217BBB47 FOREIGN KEY (person_id) REFERENCES person (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE)');
         $this->addSql('CREATE INDEX IDX_1E083C6B2D29E3C6 ON policy_person (policy_id)');
         $this->addSql('CREATE INDEX IDX_1E083C6B217BBB47 ON policy_person (person_id)');
         $this->addSql('CREATE TABLE user (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, username VARCHAR(180) NOT NULL, roles CLOB NOT NULL --(DC2Type:json)
         , password VARCHAR(255) NOT NULL)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_8D93D649F85E0677 ON user (username)');
-        $this->addSql('CREATE TABLE vehicle (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, garaging_address_id INTEGER DEFAULT NULL, year INTEGER NOT NULL, make VARCHAR(50) NOT NULL, model VARCHAR(50) NOT NULL, vin BIGINT NOT NULL, usage VARCHAR(100) NOT NULL, primary_use VARCHAR(100) NOT NULL, annual_mileage INTEGER NOT NULL, ownership VARCHAR(100) NOT NULL, CONSTRAINT FK_1B80E4867A926313 FOREIGN KEY (garaging_address_id) REFERENCES address (id) NOT DEFERRABLE INITIALLY IMMEDIATE)');
+        $this->addSql('CREATE TABLE vehicle (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, garaging_address_id INTEGER DEFAULT NULL, policy_id INTEGER DEFAULT NULL, year INTEGER NOT NULL, make VARCHAR(50) NOT NULL, model VARCHAR(50) NOT NULL, vin BIGINT NOT NULL, usage VARCHAR(100) NOT NULL, primary_use VARCHAR(100) NOT NULL, annual_mileage INTEGER NOT NULL, ownership VARCHAR(100) NOT NULL, CONSTRAINT FK_1B80E4867A926313 FOREIGN KEY (garaging_address_id) REFERENCES address (id) NOT DEFERRABLE INITIALLY IMMEDIATE, CONSTRAINT FK_1B80E4862D29E3C6 FOREIGN KEY (policy_id) REFERENCES policy (id) NOT DEFERRABLE INITIALLY IMMEDIATE)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_1B80E486B1085141 ON vehicle (vin)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_1B80E4867A926313 ON vehicle (garaging_address_id)');
+        $this->addSql('CREATE INDEX IDX_1B80E4862D29E3C6 ON vehicle (policy_id)');
         $this->addSql('CREATE TABLE messenger_messages (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, body CLOB NOT NULL, headers CLOB NOT NULL, queue_name VARCHAR(190) NOT NULL, created_at DATETIME NOT NULL --(DC2Type:datetime_immutable)
         , available_at DATETIME NOT NULL --(DC2Type:datetime_immutable)
         , delivered_at DATETIME DEFAULT NULL --(DC2Type:datetime_immutable)
@@ -56,7 +54,6 @@ final class Version20240223073336 extends AbstractMigration
         $this->addSql('DROP TABLE coverage');
         $this->addSql('DROP TABLE person');
         $this->addSql('DROP TABLE policy');
-        $this->addSql('DROP TABLE policy_vehicle');
         $this->addSql('DROP TABLE policy_person');
         $this->addSql('DROP TABLE user');
         $this->addSql('DROP TABLE vehicle');

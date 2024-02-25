@@ -48,13 +48,12 @@ class Vehicle
     #[ORM\OneToMany(targetEntity: Coverage::class, mappedBy: 'vehicle', orphanRemoval: true)]
     private Collection $coverages;
 
-    #[ORM\ManyToMany(targetEntity: Policy::class, mappedBy: 'vehicles')]
-    private Collection $policies;
+    #[ORM\ManyToOne(inversedBy: 'vehicles')]
+    private ?Policy $policy = null;
 
     public function __construct()
     {
         $this->coverages = new ArrayCollection();
-        $this->policies = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -200,29 +199,14 @@ class Vehicle
         return $this;
     }
 
-    /**
-     * @return Collection<int, Policy>
-     */
-    public function getPolicies(): Collection
+    public function getPolicy(): ?Policy
     {
-        return $this->policies;
+        return $this->policy;
     }
 
-    public function addPolicy(Policy $policy): static
+    public function setPolicy(?Policy $policy): static
     {
-        if (!$this->policies->contains($policy)) {
-            $this->policies->add($policy);
-            $policy->addVehicle($this);
-        }
-
-        return $this;
-    }
-
-    public function removePolicy(Policy $policy): static
-    {
-        if ($this->policies->removeElement($policy)) {
-            $policy->removeVehicle($this);
-        }
+        $this->policy = $policy;
 
         return $this;
     }

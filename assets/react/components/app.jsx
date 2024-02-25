@@ -56,6 +56,7 @@ const App = () => {
   };
 
   const registerHandler = (username, password) => {
+    setSpinner(true);
     callApi(
       "POST",
       `/api/user`,
@@ -69,6 +70,7 @@ const App = () => {
       } else if (response.code) {
         setError(response);
       }
+      setSpinner(false);
     });
   };
 

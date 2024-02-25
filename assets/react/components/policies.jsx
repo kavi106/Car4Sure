@@ -17,6 +17,8 @@ import { callApi } from "../callApi";
 import Spinner from "./spinner";
 import PolicyDialog from "./policy";
 import AlertDialog from "./alert";
+import DriversDialog from "./drivers";
+import VehiclesDialog from "./vehicles";
 
 const defaultAlert = { code: "", message: "" };
 
@@ -28,7 +30,9 @@ export default function PolicyList(props) {
   const [refreshPage, setRefreshPage] = React.useState(null);
   const [policyData, setPolicyData] = React.useState(null);
   const [error, setError] = React.useState(defaultAlert);
-  
+  const [showDrivers, setShowDrivers] = React.useState(0);
+  const [showVehicles, setShowVehicles] = React.useState(0);
+
   React.useEffect(() => {
     setSpinner(true);
     callApi("GET", `/api/policies`, {}, props.token).then((response) => {
@@ -51,6 +55,14 @@ export default function PolicyList(props) {
       }
       setSpinner(false);
     });
+  };
+
+  const driversDialogHandler = (id) => {
+    setShowDrivers(id);
+  };
+
+  const vehiclesDialogHandler = (id) => {
+    setShowVehicles(id);
   };
 
   const closeAlertHandler = () => {
@@ -116,9 +128,15 @@ export default function PolicyList(props) {
       description: "Actions column.",
       sortable: false,
       width: 150,
-      renderCell: () => {
+      renderCell: (params) => {
         return (
-          <Button variant="outlined" startIcon={<Person2OutlinedIcon />}>
+          <Button
+            variant="outlined"
+            startIcon={<Person2OutlinedIcon />}
+            onClick={() => {
+              driversDialogHandler(params.row.id);
+            }}
+          >
             Drivers
           </Button>
         );
@@ -130,11 +148,14 @@ export default function PolicyList(props) {
       description: "Actions column.",
       sortable: false,
       width: 150,
-      renderCell: () => {
+      renderCell: (params) => {
         return (
           <Button
             variant="outlined"
             startIcon={<DirectionsCarFilledOutlinedIcon />}
+            onClick={() => {
+              vehiclesDialogHandler(params.row.id);
+            }}
           >
             Vehicles
           </Button>
@@ -152,7 +173,6 @@ export default function PolicyList(props) {
           <IconButton
             size="small"
             color="primary"
-            onClick={(e) => onButtonClick(e, params.row)}
           >
             <PictureAsPdfOutlinedIcon />
           </IconButton>
@@ -207,6 +227,22 @@ export default function PolicyList(props) {
       {error.code !== "" && error.message !== "" && (
         <AlertDialog onClose={closeAlertHandler}>{error.message}</AlertDialog>
       )}
+      {showDrivers > 0 && (
+        <DriversDialog
+          policy={showDrivers}
+          token={props.token}
+          onLogout={props.onLogout}
+          onClose={setShowDrivers}
+        />
+      )}
+      {showVehicles > 0 && (
+        <VehiclesDialog
+          policy={showVehicles}
+          token={props.token}
+          onLogout={props.onLogout}
+          onClose={setShowVehicles}
+        />
+      )}
       {policyData?.id >= 0 && (
         <PolicyDialog
           policyData={policyData}
@@ -230,7 +266,7 @@ export default function PolicyList(props) {
               startIcon={<AddOutlinedIcon />}
               onClick={() => {
                 // setShowPolicy(0);
-                setPolicyData({id: 0});
+                setPolicyData({ id: 0 });
               }}
             >
               Policy

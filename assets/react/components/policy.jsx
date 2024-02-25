@@ -60,8 +60,6 @@ export default function PolicyDialog(props) {
       }
       setSpinner(false);
     });
-
-    console.log(formJson);
   };
 
   const title =

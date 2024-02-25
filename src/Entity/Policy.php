@@ -28,9 +28,6 @@ class Policy
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $policyExpirationDate = null;
 
-    #[ORM\ManyToMany(targetEntity: Vehicle::class, inversedBy: 'policies')]
-    private Collection $vehicles;
-
     #[ORM\ManyToOne(inversedBy: 'policies')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Person $policyHolder = null;
@@ -41,6 +38,9 @@ class Policy
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
+
+    #[ORM\OneToMany(targetEntity: Vehicle::class, mappedBy: 'policy', cascade: ['persist', 'remove'])]
+    private Collection $vehicles;
 
     public function __construct()
     {
@@ -101,30 +101,6 @@ class Policy
         return $this;
     }
 
-    /**
-     * @return Collection<int, Vehicle>
-     */
-    public function getVehicles(): Collection
-    {
-        return $this->vehicles;
-    }
-
-    public function addVehicle(Vehicle $vehicle): static
-    {
-        if (!$this->vehicles->contains($vehicle)) {
-            $this->vehicles->add($vehicle);
-        }
-
-        return $this;
-    }
-
-    public function removeVehicle(Vehicle $vehicle): static
-    {
-        $this->vehicles->removeElement($vehicle);
-
-        return $this;
-    }
-
     public function getPolicyHolder(): ?Person
     {
         return $this->policyHolder;
@@ -169,6 +145,36 @@ class Policy
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Vehicle>
+     */
+    public function getVehicles(): Collection
+    {
+        return $this->vehicles;
+    }
+
+    public function addVehicle(Vehicle $vehicle): static
+    {
+        if (!$this->vehicles->contains($vehicle)) {
+            $this->vehicles->add($vehicle);
+            $vehicle->setPolicy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVehicle(Vehicle $vehicle): static
+    {
+        if ($this->vehicles->removeElement($vehicle)) {
+            // set the owning side to null (unless already changed)
+            if ($vehicle->getPolicy() === $this) {
+                $vehicle->setPolicy(null);
+            }
+        }
 
         return $this;
     }
