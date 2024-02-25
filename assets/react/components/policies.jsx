@@ -12,28 +12,50 @@ import DeleteForeverOutlinedIcon from "@mui/icons-material/DeleteForeverOutlined
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Person2OutlinedIcon from "@mui/icons-material/Person2Outlined";
 import DirectionsCarFilledOutlinedIcon from "@mui/icons-material/DirectionsCarFilledOutlined";
-import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import { callApi } from "../callApi";
+import Spinner from "./spinner";
+import PolicyDialog from "./policy";
+import AlertDialog from "./alert";
+
+const defaultAlert = { code: "", message: "" };
 
 //https://mui.com/x/react-data-grid/layout/
 //https://stackblitz.com/edit/mui-datagrid-button?file=src%2FApp.js
 export default function PolicyList(props) {
   const [rows, setRows] = React.useState([]);
-  // const [clickedRow, setClickedRow] = React.useState();
-  // const onButtonClick = (e, row) => {
-  //   e.stopPropagation();
-  //   setClickedRow(row);
-  // };
-
+  const [spinner, setSpinner] = React.useState(true);
+  const [refreshPage, setRefreshPage] = React.useState(null);
+  const [policyData, setPolicyData] = React.useState(null);
+  const [error, setError] = React.useState(defaultAlert);
+  
   React.useEffect(() => {
+    setSpinner(true);
     callApi("GET", `/api/policies`, {}, props.token).then((response) => {
       if (response[0]?.id) {
         setRows(response);
       } else if (response.code) {
         props.onLogout();
       }
+      setSpinner(false);
     });
-  }, []);
+  }, [refreshPage]);
+
+  const handleDeletePolicy = (id) => {
+    setSpinner(true);
+    callApi("DELETE", `/api/policy/${id}`, {}, props.token).then((response) => {
+      if (response.code == 401) props.onLogout();
+      if (response.code == 200) {
+        setError(response);
+        setRefreshPage(Math.random());
+      }
+      setSpinner(false);
+    });
+  };
+
+  const closeAlertHandler = () => {
+    setError(defaultAlert);
+  };
 
   const columns = [
     {
@@ -148,7 +170,9 @@ export default function PolicyList(props) {
           <IconButton
             size="small"
             color="error"
-            onClick={(e) => onButtonClick(e, params.row)}
+            onClick={() => {
+              handleDeletePolicy(params.row.id);
+            }}
           >
             <DeleteForeverOutlinedIcon />
           </IconButton>
@@ -166,7 +190,9 @@ export default function PolicyList(props) {
           <IconButton
             size="small"
             color="primary"
-            onClick={(e) => onButtonClick(e, params.row)}
+            onClick={() => {
+              setPolicyData(params.row);
+            }}
           >
             <EditOutlinedIcon />
           </IconButton>
@@ -175,19 +201,21 @@ export default function PolicyList(props) {
     },
   ];
 
-  // const rows = [
-  //   { id: 1, lastName: "Snow", firstName: "Jon", age: 35 },
-  //   { id: 2, lastName: "Lannister", firstName: "Cersei", age: 42 },
-  //   { id: 3, lastName: "Lannister", firstName: "Jaime", age: 45 },
-  //   { id: 4, lastName: "Stark", firstName: "Arya", age: 16 },
-  //   { id: 5, lastName: "Targaryen", firstName: "Daenerys", age: null },
-  //   { id: 6, lastName: "Melisandre", firstName: null, age: 150 },
-  //   { id: 7, lastName: "Clifford", firstName: "Ferrara", age: 44 },
-  //   { id: 8, lastName: "Frances", firstName: "Rossini", age: 36 },
-  //   { id: 9, lastName: "Roxie", firstName: "Harvey", age: 65 },
-  // ];
   return (
     <Container sx={{ marginTop: 2 }} maxWidth="xl">
+      {spinner && <Spinner />}
+      {error.code !== "" && error.message !== "" && (
+        <AlertDialog onClose={closeAlertHandler}>{error.message}</AlertDialog>
+      )}
+      {policyData?.id >= 0 && (
+        <PolicyDialog
+          policyData={policyData}
+          onShowPolicy={setPolicyData}
+          onRefreshPolicies={setRefreshPage}
+          onLogout={props.onLogout}
+          token={props.token}
+        />
+      )}
       <Typography component="h2" variant="body" align="center">
         List of policies
       </Typography>
@@ -200,6 +228,10 @@ export default function PolicyList(props) {
               size="small"
               variant="contained"
               startIcon={<AddOutlinedIcon />}
+              onClick={() => {
+                // setShowPolicy(0);
+                setPolicyData({id: 0});
+              }}
             >
               Policy
             </Button>
@@ -217,7 +249,6 @@ export default function PolicyList(props) {
           pageSizeOptions={[5, 10]}
         />
       </Box>
-      {/* clickedRow: {clickedRow ? `${clickedRow.firstName}` : null} */}
     </Container>
   );
 }

@@ -428,14 +428,40 @@ class ApiController extends AbstractController
     }
     // ############ End Person ########### //
     // ############ Start Policy ########### //
-    #[Route('/policy', name: 'policy_create', methods:['post'] )]
-    public function create_policy(ManagerRegistry $doctrine, Request $request): JsonResponse
+    #[Route('/policy', name: 'policy_create', methods:['post','put', 'patch'] )]
+    public function create_policy(ManagerRegistry $doctrine, Request $request, TokenStorageInterface $tokenStorage): JsonResponse
     {
+        // return $this->json(['aa'=>$request->request->get('user')], 400);
         $entityManager = $doctrine->getManager();
     
-        $user = $entityManager->getRepository(User::class)->find($request->request->get('user'));
+        $user = $tokenStorage->getToken()->getUser();
 
-        $address = new Address();
+
+        
+
+        if ($request->request->get('id', 0) > 0)
+        {
+            $policy = $doctrine
+            ->getRepository(Policy::class)
+            ->findOneBy(['user' => $user->getId(), 'id' => $request->request->get('id')]);
+   
+            if (!$policy) {
+                return $this->json(['code' => 404, 'message' => 'No policy found for id '.$id], 404);
+            }
+
+            $person = $policy->getPolicyHolder();
+            $address = $person->getAddress();
+        }
+        else
+        {
+            $policy = new Policy();
+            $address = new Address();
+            $person = new Person();
+            $person->setAddress($address);
+            $policy->setUser($user);
+            $policy->setPolicyHolder($person);
+        }
+
         $address->setStreet($request->request->get('street'));
         $address->setCity($request->request->get('city'));
         $address->setState($request->request->get('state'));
@@ -443,48 +469,47 @@ class ApiController extends AbstractController
         $entityManager->persist($address);
         $entityManager->flush();
 
-        $person = new Person();
         $person->setFirstName($request->request->get('firstName'));
         $person->setLastName($request->request->get('lastName'));
-        $person->setAddress($address);
+        
         $entityManager->persist($person);
         $entityManager->flush();
 
-        $policy = new Policy();
         $policy->setPolicyStatus($request->request->get('policyStatus'));
         $policy->setPolicyType($request->request->get('policyType'));
         $policy->setPolicyEffectiveDate($request->request->get('policyEffectiveDate', null) != null ? \DateTime::createFromFormat('Y-m-d', $request->request->get('policyEffectiveDate')) : null);
         $policy->setPolicyExpirationDate($request->request->get('policyExpirationDate', null) != null ? \DateTime::createFromFormat('Y-m-d', $request->request->get('policyExpirationDate')) : null);
-        $policy->setUser($user);
-        $policy->setPolicyHolder($person);
+        
+        
 
-        $policy->addDriver($entityManager->getRepository(Person::class)->find(1));
-        $policy->addDriver($entityManager->getRepository(Person::class)->find(2));
+        // $policy->addDriver($entityManager->getRepository(Person::class)->find(1));
+        // $policy->addDriver($entityManager->getRepository(Person::class)->find(2));
     
         $entityManager->persist($policy);
         $entityManager->flush();
 
-        $drivers = $policy->getDrivers();
-        foreach ($drivers as $driver) {
-            $driversData[] = [
-                'id' => $driver->getId(),
-                'firstName' => $driver->getFirstName(),
-                'lastName' => $driver->getLastName(),
-                'dob' => $driver->getDateOfBirth(),
-                'maritalStatus' => $driver->getMaritalStatus(),
-                'licenseNumber' => $driver->getLicenseNumber(),
-                'licenseState' => $driver->getLicenseState(),
-                'licenseStatus' => $driver->getLicenseStatus(),
-                'licenseEffectiveDate' => $driver->getLicenseEffectiveDate(),
-                'licenseExpirationDate' => $driver->getLicenseExpirationDate(),
-                'licenseClass' => $driver->getLicenseClass(),
-            ];
-        }
+        // $drivers = $policy->getDrivers();
+        // foreach ($drivers as $driver) {
+        //     $driversData[] = [
+        //         'id' => $driver->getId(),
+        //         'firstName' => $driver->getFirstName(),
+        //         'lastName' => $driver->getLastName(),
+        //         'dob' => $driver->getDateOfBirth(),
+        //         'maritalStatus' => $driver->getMaritalStatus(),
+        //         'licenseNumber' => $driver->getLicenseNumber(),
+        //         'licenseState' => $driver->getLicenseState(),
+        //         'licenseStatus' => $driver->getLicenseStatus(),
+        //         'licenseEffectiveDate' => $driver->getLicenseEffectiveDate(),
+        //         'licenseExpirationDate' => $driver->getLicenseExpirationDate(),
+        //         'licenseClass' => $driver->getLicenseClass(),
+        //     ];
+        // }
     
         $data =  [
             'id' => $policy->getId(),
             'policyStatus' => $policy->getPolicyStatus(),
             'policyType' => $policy->getPolicyType(),
+            'policyEffectiveDate' => $policy->getPolicyEffectiveDate(),
             'policyExpirationDate' => $policy->getPolicyExpirationDate(),
             'policyHolder' => [
                 'id' => $person->getId(),
@@ -498,7 +523,7 @@ class ApiController extends AbstractController
                     'zip' => $address?->getZip(),
                 ],
             ],
-            'drivers' => $driversData
+            // 'drivers' => $driversData
         ];
             
         return $this->json($data);
@@ -539,6 +564,65 @@ class ApiController extends AbstractController
         }
    
         return $this->json($data);
+    }
+    #[Route('/policy/{id}', name: 'policy_get', methods:['get'] )]
+    public function get_policy(ManagerRegistry $doctrine, TokenStorageInterface $tokenStorage, int $id): JsonResponse
+    {
+        $user = $tokenStorage->getToken()->getUser();
+
+        $data = [];
+
+        $policy = $doctrine
+            ->getRepository(Policy::class)
+            ->findOneBy(['user' => $user->getId(), 'id' => $id]);
+   
+        if (!$policy) {
+            return $this->json(['code' => 404, 'message' => 'No policy found for id '.$id], 404);
+        }
+
+        $person = $policy->getPolicyHolder();
+        $address = $person->getAddress();
+
+        $data =  [
+            'id' => $policy->getId(),
+            'policyStatus' => $policy->getPolicyStatus(),
+            'policyType' => $policy->getPolicyType(),
+            'policyEffectiveDate' => $policy->getPolicyEffectiveDate(),
+            'policyExpirationDate' => $policy->getPolicyExpirationDate(),
+            'policyHolder' => [
+                'id' => $person->getId(),
+                'firstName' => $person->getFirstName(),
+                'lastName' => $person->getLastName(),
+                'address' => [
+                    'id' => $address?->getId(),
+                    'street' => $address?->getStreet(),
+                    'city' => $address?->getCity(),
+                    'state' => $address?->getState(),
+                    'zip' => $address?->getZip(),
+                ],
+            ],
+        ];
+
+        return $this->json($data);
+    }
+    #[Route('/policy/{id}', name: 'policy_delete', methods:['delete'] )]
+    public function delete(ManagerRegistry $doctrine, TokenStorageInterface $tokenStorage, int $id): JsonResponse
+    {
+        $user = $tokenStorage->getToken()->getUser();
+        $entityManager = $doctrine->getManager();
+
+        $policy = $entityManager
+            ->getRepository(Policy::class)
+            ->findOneBy(['user' => $user->getId(), 'id' => $id]);
+
+        if (!$policy) {
+            return $this->json(['code' => 404, 'message' => 'No policy found for id '.$id], 404);
+        }
+   
+        $entityManager->remove($policy);
+        $entityManager->flush();
+   
+        return $this->json(['code' => 200, 'message' => 'Deleted a policy successfully with id ' . $id], 200);
     }
     // ############ End Policy ########### //
 
