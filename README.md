@@ -17,22 +17,22 @@ docker-compose up --build
 Symfony was used as a backend and ReactJS as the front end.
 
 ## Symfony
-We used Symfony because it has all the tools/libraries we needed.
+I used Symfony because it has all the tools/libraries needed.
 
 "symfony/validator" module was use to validate the inputs to the API.
 
-Sqlite was used as a database because its easy to implement. We used doctrine so we can swap database if needed.
+Sqlite was used as a database because its easy to implement. I used doctrine so we can swap database if needed.
 
-We used "lexik/jwt-authentication-bundle" module for authentication.
+"lexik/jwt-authentication-bundle" module was used for authentication.
 
 ## ReactJS
 ReactJS was used because I have the knowledge but any other technology could have been used.
 
 ## Not Implemented
-PDF generation was not implemented doe to lact of time.
+PDF generation was not implemented due to lack of time.
 
 ## What could have been better
-Error display on the frontend.
+Error popup displays on the frontend.
 
 Better transition between the frontend screens.
 
