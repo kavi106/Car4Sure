@@ -1,8 +1,5 @@
 import * as React from "react";
 import CssBaseline from "@mui/material/CssBaseline";
-import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
-import Paper from "@mui/material/Paper";
 import LoginDialog from "./login";
 import RegisterDialog from "./register";
 import AlertDialog from "./alert";
